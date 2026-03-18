@@ -1,0 +1,15 @@
+# SessionSense AI — Default Configuration
+# Copy to ~/.sessionsense/config to customize.
+# All values shown are the defaults.
+
+# ── Display modules ──────────────────────────────────────────────────────────
+BADGE=true              # iTerm2 badge overlay inside viewport
+TAB_TITLE=true          # Tab and window title
+TAB_COLOR=true          # Auto-color tab by emoji keyword (iTerm2 only)
+
+# ── Context modules (opt-in) ─────────────────────────────────────────────────
+TIME_HINT=false         # Append elapsed time to label (e.g. "· 12m")
+GIT_CONTEXT=false       # Append current git branch (e.g. "· main-ams")
+
+# ── Behavior ─────────────────────────────────────────────────────────────────
+RESTORE_ON_INIT=true    # Restore label when opening new shell in same window
