@@ -58,3 +58,82 @@ _ss_prune_stale() {
     fi
   done
 }
+
+# ── Display functions ────────────────────────────────────────────────────────
+
+_ss_set_badge() {
+  local encoded
+  encoded=$(printf '%s' "$1" | base64)
+  printf '\e]1337;SetBadgeFormat=%s\a' "$encoded"
+}
+
+_ss_clear_badge() {
+  printf '\e]1337;SetBadgeFormat=\a'
+}
+
+_ss_set_tab_color() {
+  printf '\e]6;1;bg;red;brightness;%d\a'   "$1"
+  printf '\e]6;1;bg;green;brightness;%d\a' "$2"
+  printf '\e]6;1;bg;blue;brightness;%d\a'  "$3"
+}
+
+_ss_reset_tab_color() {
+  printf '\e]6;1;bg;*;default\a'
+}
+
+_ss_apply_color() {
+  [[ "$TAB_COLOR" != "true" ]] && return
+  ! _ss_is_iterm && return
+  case "$1" in
+    *🧠*) _ss_set_tab_color 59  130 246 ;;  # Blue   — brainstorm/plan
+    *🔥*) _ss_set_tab_color 239 68  68  ;;  # Red    — debug/incident
+    *🚀*) _ss_set_tab_color 34  197 94  ;;  # Green  — deploy/ship
+    *🔧*) _ss_set_tab_color 249 115 22  ;;  # Orange — infra/config
+    *📋*) _ss_set_tab_color 168 85  247 ;;  # Purple — review/docs
+    *)    _ss_reset_tab_color ;;
+  esac
+}
+
+_ss_time_hint() {
+  [[ "$TIME_HINT" != "true" ]] && return
+  local ts_file
+  ts_file=$(_ss_timestamp_file)
+  [[ ! -f "$ts_file" ]] && return
+  local elapsed mins
+  elapsed=$(( $(date +%s) - $(cat "$ts_file") ))
+  mins=$(( elapsed / 60 ))
+  if (( mins < 60 )); then
+    printf '· %dm' "$mins"
+  else
+    printf '· %dh' "$(( mins / 60 ))"
+  fi
+}
+
+_ss_git_context() {
+  [[ "$GIT_CONTEXT" != "true" ]] && return
+  local branch
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || return
+  printf '· %s' "$branch"
+}
+
+_ss_build_display() {
+  local base="$1"
+  local hint git_ctx extras
+  hint=$(_ss_time_hint)
+  git_ctx=$(_ss_git_context)
+  extras="${hint}${git_ctx:+ $git_ctx}"
+  [[ -n "$extras" ]] && printf '%s %s' "$base" "$extras" || printf '%s' "$base"
+}
+
+_ss_apply_label() {
+  local text="$1"
+  local display
+  display=$(_ss_build_display "$text")
+
+  [[ "$TAB_TITLE" == "true" ]] && printf '\e]0;%s\a' "$display"
+
+  if _ss_is_iterm; then
+    [[ "$BADGE" == "true" ]] && _ss_set_badge "$display"
+    _ss_apply_color "$text"
+  fi
+}
