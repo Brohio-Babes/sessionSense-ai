@@ -137,3 +137,88 @@ _ss_apply_label() {
     _ss_apply_color "$text"
   fi
 }
+
+# ── Persistence ──────────────────────────────────────────────────────────────
+
+_ss_save_label() {
+  mkdir -p "$_SS_HOME"
+  printf '%s' "$1" > "$(_ss_label_file)"
+  date +%s > "$(_ss_timestamp_file)"
+}
+
+_ss_load_label() {
+  local lf
+  lf=$(_ss_label_file)
+  [[ -f "$lf" ]] && cat "$lf"
+}
+
+_ss_restore() {
+  [[ "$RESTORE_ON_INIT" != "true" ]] && return
+  local stored
+  stored=$(_ss_load_label)
+  [[ -z "$stored" ]] && return
+  _ss_apply_label "$stored"
+}
+
+# ── PROMPT_COMMAND hook (refreshes time hint each prompt) ────────────────────
+
+_ss_prompt_hook() {
+  local stored
+  stored=$(_ss_load_label)
+  [[ -z "$stored" ]] && return
+  _ss_apply_label "$stored"
+}
+
+if [[ -n "$BASH_VERSION" ]]; then
+  if [[ "$PROMPT_COMMAND" != *"_ss_prompt_hook"* ]]; then
+    PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND}; }_ss_prompt_hook"
+  fi
+elif [[ -n "$ZSH_VERSION" ]]; then
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _ss_prompt_hook
+fi
+
+# ── Public API ───────────────────────────────────────────────────────────────
+
+label() {
+  case "$1" in
+    --clear)
+      rm -f "$(_ss_label_file)" "$(_ss_timestamp_file)"
+      printf '\e]0;\a'
+      if _ss_is_iterm; then
+        _ss_clear_badge
+        _ss_reset_tab_color
+      fi
+      echo "SessionSense: label cleared"
+      ;;
+
+    --status)
+      local stored
+      stored=$(_ss_load_label)
+      if [[ -z "$stored" ]]; then
+        echo "SessionSense: no label set"
+      else
+        echo "SessionSense: $stored"
+      fi
+      ;;
+
+    "")
+      echo "Usage:"
+      echo "  label \"🧠 your context\"   — set label"
+      echo "  label --clear             — clear label"
+      echo "  label --status            — show current label"
+      ;;
+
+    *)
+      local text="$*"
+      _ss_save_label "$text"
+      _ss_apply_label "$text"
+      echo "SessionSense: labeled → $text"
+      ;;
+  esac
+}
+
+# ── Init ─────────────────────────────────────────────────────────────────────
+
+_ss_prune_stale
+_ss_restore
