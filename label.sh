@@ -49,10 +49,10 @@ _ss_prune_stale() {
   [[ -d "$_SS_HOME" ]] || return
   for f in "${_SS_HOME}"/[0-9]*; do
     [[ -f "$f" ]] || continue
-    local tty_id
-    tty_id=$(basename "$f" .time)
     # Skip .time files — they're paired with their label file
-    [[ "$tty_id" == *.time ]] && continue
+    [[ "$f" == *.time ]] && continue
+    local tty_id
+    tty_id=$(basename "$f")
     if [[ ! -e "/dev/ttys${tty_id}" ]]; then
       rm -f "$f" "${f}.time"
     fi
