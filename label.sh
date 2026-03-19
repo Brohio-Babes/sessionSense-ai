@@ -34,10 +34,11 @@ _ss_load_config
 _ss_is_iterm() { [[ "$TERM_PROGRAM" == "iTerm.app" ]]; }
 
 _ss_tty_id() {
-  local raw
+  local raw id
   raw=$(tty 2>/dev/null)
-  # Extract numeric portion: /dev/ttys003 → 003
-  printf '%s' "$raw" | sed 's|/dev/ttys*||'
+  id=$(printf '%s' "$raw" | sed 's|/dev/ttys*||')
+  # Only return numeric IDs — guard against "not a tty" in non-interactive contexts
+  [[ "$id" =~ ^[0-9]+$ ]] && printf '%s' "$id"
 }
 
 _ss_label_file()     { echo "${_SS_HOME}/$(_ss_tty_id)"; }

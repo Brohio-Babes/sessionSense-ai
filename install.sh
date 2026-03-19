@@ -6,6 +6,7 @@ set -e
 
 SS_HOME="${HOME}/.sessionsense"
 SS_LABEL_SH="${SS_HOME}/label.sh"
+SS_STATUS_SH="${SS_HOME}/set-status.sh"
 SS_CONFIG="${SS_HOME}/config"
 REPO_RAW="https://raw.githubusercontent.com/YOUR_USERNAME/sessionsense-ai/main"
 
@@ -30,6 +31,14 @@ fi
 
 chmod +x "$SS_LABEL_SH"
 _ss_print "Downloaded label.sh → ${SS_LABEL_SH}"
+
+# Download set-status.sh (Claude Code hook script)
+if command -v curl &>/dev/null; then
+  curl -fsSL "${REPO_RAW}/set-status.sh" -o "$SS_STATUS_SH"
+elif command -v wget &>/dev/null; then
+  wget -qO "$SS_STATUS_SH" "${REPO_RAW}/set-status.sh"
+fi
+[[ -f "$SS_STATUS_SH" ]] && chmod +x "$SS_STATUS_SH" && _ss_print "Downloaded set-status.sh → ${SS_STATUS_SH}"
 
 # Write default config if not already present
 if [[ ! -f "$SS_CONFIG" ]]; then
